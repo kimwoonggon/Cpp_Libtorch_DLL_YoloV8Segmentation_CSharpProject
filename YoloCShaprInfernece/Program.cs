@@ -94,7 +94,7 @@ namespace YoloCShaprInference
 
         // PerformInference runs detection on a single image.
         [DllImport(dll, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int PerformInference(string inputData, int net_height, int net_width);
+        private static extern int PerformImagePathInference(string inputData, int net_height, int net_width);
 
         // PerformFrameInference handles detection on video or webcam streams.
         [DllImport(dll, CallingConvention = CallingConvention.Cdecl)]
@@ -102,11 +102,11 @@ namespace YoloCShaprInference
 
         // PopulateObjectsArray formats detection results for C# use.
         [DllImport(dll, CallingConvention = CallingConvention.Cdecl)]
-        private static extern void PopulateObjectsArray(IntPtr objects, int org_height, int org_width);
+        private static extern void PopulateYoloObjectsArray(IntPtr objects, int org_height, int org_width);
 
         // FreeResources clears memory used during detection to optimize performance.
         [DllImport(dll, CallingConvention = CallingConvention.Cdecl)]
-        private static extern void FreeResources();
+        private static extern void FreeAllocatedMemory();
 
         // AllocConsole opens a new console window for debugging output.
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -126,7 +126,7 @@ namespace YoloCShaprInference
         // by calling PopulateObjectsArray from the DLL.
         // The fixed keyword is used to pin the YoloObjectArray in memory,
         // providing an unchanging pointer to PopulateObjectsArray.
-        static unsafe void RunPopulateObjectsArray(int numProPosals, int org_height, int org_width)
+        static unsafe void RunPopulateYoloObjectsArray(int numProPosals, int org_height, int org_width)
         {
             // Initialize the array with the number of detections.
             YoloObjectArray = new YoloObject[numProPosals];
@@ -135,7 +135,7 @@ namespace YoloCShaprInference
             fixed (YoloObject* o = YoloObjectArray)
             {
                 // Populate the array with detection data.
-                PopulateObjectsArray((IntPtr)o, org_height, org_width);
+                PopulateYoloObjectsArray((IntPtr)o, org_height, org_width);
             }
         }
 
@@ -227,7 +227,7 @@ namespace YoloCShaprInference
                     }
 
                     // Populate the YoloObjectArray with detection data for further processing.
-                    RunPopulateObjectsArray(numObjects, orgHeight, orgWidth);
+                    RunPopulateYoloObjectsArray(numObjects, orgHeight, orgWidth);
 
                     // Blend detected objects' segmentation maps onto the original frame for visualization.
                     double alpha = 0.8;
@@ -282,7 +282,7 @@ namespace YoloCShaprInference
                 }
             }
             capture.Dispose();
-            FreeResources(); // Free resources allocated by the DLL.
+            FreeAllocatedMemory(); // Free resources allocated by the DLL.
             Console.WriteLine("Resources Freed");
         }
 
@@ -319,7 +319,7 @@ namespace YoloCShaprInference
             SetThreshold(0.3f, 0.3f, 0.3f);
             Console.WriteLine("Threshold setting fishined .. ");
             // Perform inference on the image
-            numObjects = PerformInference(img_path, net_height, net_width);
+            numObjects = PerformImagePathInference(img_path, net_height, net_width);
 
             // Check the inference result and skip processing if no objects were detected or if an error occurred.
             if (numObjects == 0)
@@ -337,7 +337,7 @@ namespace YoloCShaprInference
             Console.WriteLine("numObjects : " + numObjects);
 
             // Populate the YoloObjectArray with detection data for further processing. 
-            RunPopulateObjectsArray(numObjects, orgHeight, orgWidth);
+            RunPopulateYoloObjectsArray(numObjects, orgHeight, orgWidth);
             Console.WriteLine("RunPopulateObjectsArray Implemented..");
 
             Console.WriteLine($"Num Objects : {numObjects}");
@@ -406,7 +406,7 @@ namespace YoloCShaprInference
 
             // Call a function to free any additional resources used during processing,
             // such as loaded models or temporary data.
-            FreeResources();
+            FreeAllocatedMemory();
             Console.WriteLine("Resources Freed");
         }
 

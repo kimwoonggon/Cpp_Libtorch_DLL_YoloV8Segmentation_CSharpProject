@@ -178,8 +178,8 @@ __declspec(dllexport) int LoadModel(char* modelPath, int deviceNum) {
     }
     // Load the model from the specified path onto the selected device.
     network = torch::jit::load(modelPath, device_type);
-    network.eval();  // Set the network to evaluation mode (disables dropout,
-                     // etc.).
+    network.eval();  // Set the network to evaluation mode (disables dropout, etc..)
+                     
     std::cout << "device type : " << device_type
               << std::endl;  // Debug: print the selected device type.
   } catch (const c10::Error& e) {
@@ -326,7 +326,7 @@ void non_max_suppression(
 
 
 // Exports function for DLL, performs inference on an single image file.
-__declspec(dllexport) int PerformInference(char* imgPath,
+__declspec(dllexport) int PerformImagePathInference(char* imgPath,
                                            int net_height,
                                            int net_width) {
   real_net_height =
@@ -455,7 +455,7 @@ __declspec(dllexport) int PerformFrameInference(uchar* inputData,
 
 // Exports the function for DLL use, intended to organize detected objects and
 // segmentation results.
-__declspec(dllexport) void PopulateObjectsArray(YoloObject* objects,
+__declspec(dllexport) void PopulateYoloObjectsArray(YoloObject* objects,
                                                 int org_height,
                                                 int org_width) {
   // Early return if no detections were made.
@@ -558,7 +558,7 @@ __declspec(dllexport) void PopulateObjectsArray(YoloObject* objects,
 
 // Exports the function for DLL, designed to free up resources used during
 // inference.
-__declspec(dllexport) void FreeResources() {
+__declspec(dllexport) void FreeAllocatedMemory() {
   dets_vec.clear();  // Clear the detections vector to free up memory.
 
   // If the model was loaded onto a CUDA (GPU) device, move it back to CPU to
