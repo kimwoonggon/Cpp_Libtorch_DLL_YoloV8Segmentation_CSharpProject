@@ -17,7 +17,7 @@ Before starting, ensure you have the following installed and properly configured
 - .NET framework or .NET Core for C# integration
 - Visual Studio 2022 or later
 
-Refer to the complete guide here for detailed setup instructions: [Complete Guide to GPU-Accelerated YOLOv8 Segmentation in C++ via LibTorch C++ DLLs](https://medium.com/@psopen11/complete-guide-to-gpu-accelerated-yolov8-segmentation-in-c-via-libtorch-c-dlls-a0e3e6029d82)
+Refer to the complete guide here for detailed setup instructions: [C++ DLL & C# with CUDA Libtorch: YOLOv8 Segmentation Guide](https://medium.com/@psopen11/complete-guide-to-gpu-accelerated-yolov8-segmentation-in-c-via-libtorch-c-dlls-a0e3e6029d82)
 
 ## Getting Started
 
