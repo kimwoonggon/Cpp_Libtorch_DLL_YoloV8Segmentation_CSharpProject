@@ -147,6 +147,10 @@ void YoloV8Detector::non_max_suppression(torch::Tensor preds, float score_thresh
     }
 }
 
+
+// [CHANGE]
+// Before: Global function `PerformImagePathInference` directly accessed global `network` and `device_type`.
+// After:  Member function `Detect` uses `this->network` and `this->device_type`.
 int YoloV8Detector::Detect(const std::string& imgPath, int net_height, int net_width) {
     real_net_height = net_height;
     real_net_width = net_width;
@@ -157,6 +161,7 @@ int YoloV8Detector::Detect(const std::string& imgPath, int net_height, int net_w
         return -1;
     }
 
+    // [CHANGE] Preprocessing logic remains largely the same, but operates on local/member variables.
     cv::resize(input_img, input_img, cv::Size(net_width, net_height));
     cv::cvtColor(input_img, input_img, cv::COLOR_BGR2RGB);
     input_img.convertTo(input_img, CV_32FC3, 1.0f / 255.0f);
@@ -165,13 +170,14 @@ int YoloV8Detector::Detect(const std::string& imgPath, int net_height, int net_w
     imgTensor = imgTensor.permute({2, 0, 1}).contiguous();
     imgTensor = imgTensor.unsqueeze(0);
 
-    // Ensure we are in inference mode
+    // [CHANGE] Added RAII guard for InferenceMode (cleaner than manual handling if any)
     torch::InferenceMode guard(true);
     
     std::vector<torch::jit::IValue> inputs;
     inputs.push_back(std::move(imgTensor));
 
     try {
+        // [CHANGE] Accessing member `network` instead of global `network`.
         torch::jit::IValue output = network.forward(inputs);
         auto preds = output.toTuple()->elements()[0].toTensor();
 
@@ -180,6 +186,7 @@ int YoloV8Detector::Detect(const std::string& imgPath, int net_height, int net_w
         }
         seg_pred = output.toTuple()->elements()[1].toTensor();
 
+        // [CHANGE] Call internal private helper instead of global function
         non_max_suppression(preds, _score_thresh, _iou_thresh);
 
         if (dets_vec.empty()) return 0;

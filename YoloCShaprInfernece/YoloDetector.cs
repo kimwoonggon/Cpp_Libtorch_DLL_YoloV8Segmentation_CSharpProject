@@ -17,13 +17,19 @@ namespace YoloCShaprInference
         public IntPtr seg_map; // Generic pointer, used internally by C++
     }
 
+    // [CHANGE] This class is NEW.
+    // Before: All [DllImport] methods were scattered in `Program.cs`.
+    // After:  This class WRAPS the DLL calls and hides the complexity.
+    //         It implements IDisposable to ensure the C++ memory is freed safely.
     public class YoloDetector : IDisposable
     {
-        private IntPtr _detectorHandle;
+        private IntPtr _detectorHandle; // Holds the pointer to the C++ 'YoloV8Detector' object
         private const string DllName = "YoloV8DLLProject";
         private bool _disposed = false;
 
         // DLL Imports
+        // [CHANGE] Notice the first argument is now 'IntPtr detector'. 
+        // We pass the instance handle to every function.
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr CreateDetector();
 

@@ -32,6 +32,11 @@ namespace YoloCShaprInference
                 return;
             }
 
+            // [CHANGE]
+            // Before: `SetDevice(deviceNum); LoadModel(modelPath, deviceNum);` (Global calls)
+            // After:  `using (var detector = new YoloDetector()) { ... }`
+            //         This creates the instance, uses it, and AUTOMATICALLY destroys it (calling Dispose) when the block ends.
+            //         This is much safer than manually calling `FreeAllocatedMemory()`.
             using (var detector = new YoloDetector())
             {
                 if (!detector.LoadModel(modelPath, deviceNum))
@@ -64,6 +69,9 @@ namespace YoloCShaprInference
                     Cv2.Resize(frame, img, new Size(net_width, net_height));
 
                     // Perform Inference
+                    // [CHANGE]
+                    // Before: `PerformFrameInference(..., net_height, net_width)`
+                    // After:  `detector.Detect(..., net_height, net_width)`
                     int numObjects = detector.Detect(img, net_height, net_width);
 
                     if (numObjects > 0)

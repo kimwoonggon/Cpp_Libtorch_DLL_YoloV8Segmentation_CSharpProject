@@ -2,23 +2,41 @@
 #include "pch.h"
 #include "YoloV8Detector.h"
 
+
 extern "C" {
+
+    // [CHANGE]
+    // Before: Global functions manipulating global state.
+    //         Example: __declspec(dllexport) int LoadModel(...) { ... modifies global 'network' ... }
+    //
+    // After:  "Opaque Pointer" (Handle) pattern.
+    //         We explicitly create an instance (`CreateDetector`) and pass it to every function (`detector`).
+    //         This clearly identifies WHICH detector we are communicating with.
 
     // Helper to cast void* to YoloV8Detector*
     inline YoloV8Detector* GetDetector(void* detector) {
         return static_cast<YoloV8Detector*>(detector);
     }
 
+    // [CHANGE] NEW Function
+    // Purpose: Allocates a new YoloV8Detector instance and returns its address.
     __declspec(dllexport) void* CreateDetector() {
         return new YoloV8Detector();
     }
 
+    // [CHANGE] NEW Function
+    // Purpose: Cleanly deletes the instance. 
+    // Before: `FreeAllocatedMemory()` only cleared vectors but didn't destroy any "Object" because there wasn't one.
     __declspec(dllexport) void DestroyDetector(void* detector) {
         if (detector) {
             delete GetDetector(detector);
         }
     }
 
+    // [CHANGE]
+    // Before: LoadModel(char* modelPath, int deviceNum)
+    // After:  LoadModel(void* detector, char* modelPath, int deviceNum)
+    //         We must specify WHICH detector instance should load the model.
     __declspec(dllexport) int LoadModel(void* detector, char* modelPath, int deviceNum) {
         if (!detector) return -1;
         return GetDetector(detector)->LoadModel(modelPath, deviceNum);

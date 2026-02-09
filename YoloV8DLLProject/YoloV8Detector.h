@@ -7,6 +7,16 @@
 #include <string>
 
 // Structure to represent a detected object (Internal/External shared)
+// [CHANGE] This file is NEW.
+// Before: All state (network, device_type, buffers) was declared as GLOBAL variables in dllmain.cpp.
+//         Example: extern "C" { torch::jit::Module network; ... }
+//
+// After:  All state is encapsulated in this YoloV8Detector class.
+//         This allows:
+//         1. Multiple instances (e.g., loading different models).
+//         2. Thread safety (each instance has its own state).
+//         3. Automatic resource cleanup via Destructor.
+
 struct YoloObject {
     float left;
     float top;
@@ -22,7 +32,9 @@ public:
     YoloV8Detector();
     ~YoloV8Detector();
 
-    // Initialize network and device
+    // [CHANGE]
+    // Before: global logic inside LoadModel(char* modelPath, ...)
+    // After:  method acting on 'this' instance.
     int LoadModel(const std::string& modelPath, int deviceNum);
     
     // Set thresholds
