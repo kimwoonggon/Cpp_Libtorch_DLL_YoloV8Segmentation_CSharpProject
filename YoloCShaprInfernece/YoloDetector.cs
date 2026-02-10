@@ -62,34 +62,34 @@ namespace YoloCShaprInference
 
         public bool LoadModel(string modelPath, int deviceNum = 1) // Default to CUDA
         {
-            if (_detectorHandle == IntPtr.Zero) throw new ObjectDisposedExceptionAttribute(nameof(YoloDetector));
+            if (_detectorHandle == IntPtr.Zero) throw new ObjectDisposedException(nameof(YoloDetector));
             int result = LoadModel(_detectorHandle, modelPath, deviceNum);
             return result == 1;
         }
 
         public void SetThreshold(float score, float iou, float seg)
         {
-            if (_detectorHandle == IntPtr.Zero) throw new ObjectDisposedExceptionAttribute(nameof(YoloDetector));
+            if (_detectorHandle == IntPtr.Zero) throw new ObjectDisposedException(nameof(YoloDetector));
             SetThreshold(_detectorHandle, score, iou, seg);
         }
 
         public int Detect(string imgPath, int netHeight, int netWidth)
         {
-            if (_detectorHandle == IntPtr.Zero) throw new ObjectDisposedExceptionAttribute(nameof(YoloDetector));
+            if (_detectorHandle == IntPtr.Zero) throw new ObjectDisposedException(nameof(YoloDetector));
             return PerformImagePathInference(_detectorHandle, imgPath, netHeight, netWidth);
         }
 
         public int Detect(Mat image, int netHeight, int netWidth)
         {
-             if (_detectorHandle == IntPtr.Zero) throw new ObjectDisposedExceptionAttribute(nameof(YoloDetector));
+             if (_detectorHandle == IntPtr.Zero) throw new ObjectDisposedException(nameof(YoloDetector));
              // PerformFrameInference expects the image data to be properly resized to netHeight x netWidth
              // The C++ side reads it as netHeight x netWidth image.
-             return PerformFrameInference(_detectorHandle, image.DataPointer, netHeight, netWidth);
+             return PerformFrameInference(_detectorHandle, (IntPtr)image.Data, netHeight, netWidth);
         }
 
         public YoloObject[] GetDetectedObjects(int numObjects, int orgHeight, int orgWidth)
         {
-            if (_detectorHandle == IntPtr.Zero) throw new ObjectDisposedExceptionAttribute(nameof(YoloDetector));
+            if (_detectorHandle == IntPtr.Zero) throw new ObjectDisposedException(nameof(YoloDetector));
             if (numObjects <= 0) return new YoloObject[0];
 
             YoloObject[] objects = new YoloObject[numObjects];

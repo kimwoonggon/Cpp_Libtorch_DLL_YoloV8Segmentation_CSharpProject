@@ -7,7 +7,7 @@ namespace YoloCShaprInference
 {
     internal class Program
     {
-        public static string modelPath = "yolov8l-seg.torchscript";
+        public static string modelPath = "yolov8s-seg.torchscript";
         public static int net_height = 640;
         public static int net_width = 640;
 
@@ -186,14 +186,14 @@ namespace YoloCShaprInference
             // Create a dummy file if not exists for testing logic? 
             // The user environment implies these files exist or are provided.
             
-            Console.WriteLine("Single Image Inference");
-            tryImageInference();
+            //Console.WriteLine("Single Image Inference");
+            //tryImageInference();
 
-            Console.WriteLine("Video Frame Inference");
-            tryFrameInference("video.mp4");
+            //Console.WriteLine("Video Frame Inference");
+            //tryFrameInference("video.mp4");
 
-            // Console.WriteLine("Webcam Inference");
-            // tryFrameInference("");
+            Console.WriteLine("Webcam Inference");
+            tryFrameInference("");
         }
     }
 }
