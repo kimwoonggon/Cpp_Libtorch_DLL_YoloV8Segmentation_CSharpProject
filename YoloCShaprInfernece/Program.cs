@@ -14,6 +14,24 @@ namespace YoloCShaprInference
         // Device selection: 0 for CPU, 1 for CUDA
         private static int deviceNum = 1; 
 
+        static void Main(string[] args)
+        {
+            // Uncomment to test single image inference
+            //Console.WriteLine("Single Image Inference");
+            //tryImageInference();
+
+            // Uncomment to test video file inference
+            //Console.WriteLine("Video Frame Inference");
+            //tryFrameInference("video.mp4");
+
+            Console.WriteLine("Webcam Inference");
+            tryFrameInference("");
+        }
+
+        /// <summary>
+        /// Runs inference on a video stream (file or webcam).
+        /// </summary>
+        /// <param name="videoPath">Path to video file, or empty string for webcam.</param>
         static void tryFrameInference(string videoPath)
         {
             VideoCapture capture;
@@ -32,11 +50,7 @@ namespace YoloCShaprInference
                 return;
             }
 
-            // [CHANGE]
-            // Before: `SetDevice(deviceNum); LoadModel(modelPath, deviceNum);` (Global calls)
-            // After:  `using (var detector = new YoloDetector()) { ... }`
-            //         This creates the instance, uses it, and AUTOMATICALLY destroys it (calling Dispose) when the block ends.
-            //         This is much safer than manually calling `FreeAllocatedMemory()`.
+            // Create the detector in a using block to ensure automatic resource cleanup.
             using (var detector = new YoloDetector())
             {
                 if (!detector.LoadModel(modelPath, deviceNum))
@@ -69,9 +83,6 @@ namespace YoloCShaprInference
                     Cv2.Resize(frame, img, new Size(net_width, net_height));
 
                     // Perform Inference
-                    // [CHANGE]
-                    // Before: `PerformFrameInference(..., net_height, net_width)`
-                    // After:  `detector.Detect(..., net_height, net_width)`
                     int numObjects = detector.Detect(img, net_height, net_width);
 
                     if (numObjects > 0)
@@ -99,6 +110,9 @@ namespace YoloCShaprInference
             capture.Dispose();
         }
 
+        /// <summary>
+        /// Runs inference on a single image file.
+        /// </summary>
         static void tryImageInference()
         {
             string img_path = "image.jpg";
@@ -139,15 +153,16 @@ namespace YoloCShaprInference
             image.Dispose();
         }
 
-
+        /// <summary>
+        /// Draws bounding boxes and segmentation masks on the image.
+        /// </summary>
+        /// <param name="image">The image to draw on.</param>
+        /// <param name="objects">Array of detected objects.</param>
         static void DrawResults(Mat image, YoloObject[] objects)
         {
             if (objects == null || objects.Length == 0) return;
 
             // Use the segmentation map from the first object (shared)
-            // Note: In the new C++ design, objects share the same internal seg_map pointer?
-            // Yes, PopulateObjects uses 'total_seg_map.data' for all objects.
-            
             IntPtr segMapPtr = objects[0].seg_map;
             if (segMapPtr == IntPtr.Zero) return;
 
@@ -162,7 +177,6 @@ namespace YoloCShaprInference
                                   new Point((int)obj.right, (int)obj.bottom), Scalar.Red, 2);
 
                     // Blend segmentation
-                    // We need to clip boxRect to image bounds
                     int x = Math.Max(0, (int)obj.left);
                     int y = Math.Max(0, (int)obj.top);
                     int w = Math.Min(image.Width - x, (int)(obj.right - obj.left));
@@ -179,21 +193,6 @@ namespace YoloCShaprInference
                     }
                 }
             }
-        }
-
-        static void Main(string[] args)
-        {
-            // Create a dummy file if not exists for testing logic? 
-            // The user environment implies these files exist or are provided.
-            
-            //Console.WriteLine("Single Image Inference");
-            //tryImageInference();
-
-            //Console.WriteLine("Video Frame Inference");
-            //tryFrameInference("video.mp4");
-
-            Console.WriteLine("Webcam Inference");
-            tryFrameInference("");
         }
     }
 }

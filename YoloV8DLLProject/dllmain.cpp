@@ -5,66 +5,79 @@
 
 extern "C" {
 
-    // [CHANGE]
-    // Before: Global functions manipulating global state.
-    //         Example: __declspec(dllexport) int LoadModel(...) { ... modifies global 'network' ... }
-    //
-    // After:  "Opaque Pointer" (Handle) pattern.
-    //         We explicitly create an instance (`CreateDetector`) and pass it to every function (`detector`).
-    //         This clearly identifies WHICH detector we are communicating with.
-
     // Helper to cast void* to YoloV8Detector*
     inline YoloV8Detector* GetDetector(void* detector) {
         return static_cast<YoloV8Detector*>(detector);
     }
 
-    // [CHANGE] NEW Function
-    // Purpose: Allocates a new YoloV8Detector instance and returns its address.
+    /// <summary>
+    /// Creates a new instance of the YoloV8Detector.
+    /// </summary>
+    /// <returns>A pointer (handle) to the new detector instance.</returns>
     __declspec(dllexport) void* CreateDetector() {
         return new YoloV8Detector();
     }
 
-    // [CHANGE] NEW Function
-    // Purpose: Cleanly deletes the instance. 
-    // Before: `FreeAllocatedMemory()` only cleared vectors but didn't destroy any "Object" because there wasn't one.
+    /// <summary>
+    /// Destroys the specified detector instance and frees memory.
+    /// </summary>
+    /// <param name="detector">The detector handle to destroy.</param>
     __declspec(dllexport) void DestroyDetector(void* detector) {
         if (detector) {
             delete GetDetector(detector);
         }
     }
 
-    // [CHANGE]
-    // Before: LoadModel(char* modelPath, int deviceNum)
-    // After:  LoadModel(void* detector, char* modelPath, int deviceNum)
-    //         We must specify WHICH detector instance should load the model.
+    /// <summary>
+    /// Loads the model for the specified detector instance.
+    /// </summary>
+    /// <param name="detector">The detector handle.</param>
+    /// <param name="modelPath">Path to the model file.</param>
+    /// <param name="deviceNum">Device ID (0 for CPU, 1 for CUDA).</param>
+    /// <returns>1 on success, -1 on failure.</returns>
     __declspec(dllexport) int LoadModel(void* detector, char* modelPath, int deviceNum) {
         if (!detector) return -1;
         return GetDetector(detector)->LoadModel(modelPath, deviceNum);
     }
 
+    /// <summary>
+    /// Sets the thresholds for the specified detector instance.
+    /// </summary>
+    /// <param name="detector">The detector handle.</param>
+    /// <param name="score_thresh">Confidence score threshold.</param>
+    /// <param name="iou_thresh">IoU threshold.</param>
+    /// <param name="seg_thresh">Segmentation threshold.</param>
     __declspec(dllexport) void SetThreshold(void* detector, float score_thresh, float iou_thresh, float seg_thresh) {
         if (detector) {
             GetDetector(detector)->SetThreshold(score_thresh, iou_thresh, seg_thresh);
         }
     }
 
+    /// <summary>
+    /// Performs inference on an image path using the specified detector.
+    /// </summary>
     __declspec(dllexport) int PerformImagePathInference(void* detector, char* imgPath, int net_height, int net_width) {
         if (!detector) return -1;
         return GetDetector(detector)->Detect(imgPath, net_height, net_width);
     }
 
+    /// <summary>
+    /// Performs inference on raw image data using the specified detector.
+    /// </summary>
     __declspec(dllexport) int PerformFrameInference(void* detector, uchar* inputData, int net_height, int net_width) {
         if (!detector) return -1;
-        // Passed inputData is assumed to be resized to net_height x net_width 
-        // because that's what the C# wrapper does before calling this.
+        
+        // We assume inputData is a BGR image buffer of size net_width x net_height.
+        // The C# wrapper ensures resizing before calling this.
         return GetDetector(detector)->Detect(inputData, net_height, net_width, net_height, net_width);
     }
 
+    /// <summary>
+    /// Populates the array of detected objects.
+    /// </summary>
     __declspec(dllexport) void PopulateYoloObjectsArray(void* detector, YoloObject* objects, int org_height, int org_width) {
         if (detector) {
             GetDetector(detector)->PopulateObjects(objects, org_height, org_width);
         }
     }
-
-    
 }

@@ -10,12 +10,12 @@ YoloV8Detector::YoloV8Detector() {
 
 YoloV8Detector::~YoloV8Detector() {
     // Torch modules and tensors usually handle their own memory, 
-    // but we might want to ensure OpenCV mats are released if they invoke specific allocators.
+    // but we ensure OpenCV mats are released.
     total_seg_map.release();
 }
 
 void YoloV8Detector::InitializeColors() {
-    // Populate colors (same as original code)
+    // Populate colors for segmentation visualization
     colors = {
         cv::Vec3b(0, 0, 255),      cv::Vec3b(0, 255, 0),      cv::Vec3b(255, 0, 0),
         cv::Vec3b(255, 255, 0),    cv::Vec3b(255, 0, 255),    cv::Vec3b(0, 255, 255),
@@ -147,10 +147,6 @@ void YoloV8Detector::non_max_suppression(torch::Tensor preds, float score_thresh
     }
 }
 
-
-// [CHANGE]
-// Before: Global function `PerformImagePathInference` directly accessed global `network` and `device_type`.
-// After:  Member function `Detect` uses `this->network` and `this->device_type`.
 int YoloV8Detector::Detect(const std::string& imgPath, int net_height, int net_width) {
     real_net_height = net_height;
     real_net_width = net_width;
@@ -161,7 +157,7 @@ int YoloV8Detector::Detect(const std::string& imgPath, int net_height, int net_w
         return -1;
     }
 
-    // [CHANGE] Preprocessing logic remains largely the same, but operates on local/member variables.
+    // Resize and normalize the image
     cv::resize(input_img, input_img, cv::Size(net_width, net_height));
     cv::cvtColor(input_img, input_img, cv::COLOR_BGR2RGB);
     input_img.convertTo(input_img, CV_32FC3, 1.0f / 255.0f);
@@ -170,14 +166,13 @@ int YoloV8Detector::Detect(const std::string& imgPath, int net_height, int net_w
     imgTensor = imgTensor.permute({2, 0, 1}).contiguous();
     imgTensor = imgTensor.unsqueeze(0);
 
-    // [CHANGE] Added RAII guard for InferenceMode (cleaner than manual handling if any)
+    // Inference mode allows for faster execution by disabling gradient calculation
     torch::InferenceMode guard(true);
     
     std::vector<torch::jit::IValue> inputs;
     inputs.push_back(std::move(imgTensor));
 
     try {
-        // [CHANGE] Accessing member `network` instead of global `network`.
         torch::jit::IValue output = network.forward(inputs);
         auto preds = output.toTuple()->elements()[0].toTensor();
 
@@ -186,7 +181,7 @@ int YoloV8Detector::Detect(const std::string& imgPath, int net_height, int net_w
         }
         seg_pred = output.toTuple()->elements()[1].toTensor();
 
-        // [CHANGE] Call internal private helper instead of global function
+        // Perform Non-Maximum Suppression
         non_max_suppression(preds, _score_thresh, _iou_thresh);
 
         if (dets_vec.empty()) return 0;
@@ -205,23 +200,7 @@ int YoloV8Detector::Detect(uchar* inputData, int rows, int cols, int net_height,
     cv::Mat input_img2 = cv::Mat(rows, cols, CV_8UC3, inputData);
     cv::cvtColor(input_img2, input_img2, cv::COLOR_BGR2RGB);
     
-    // We need to resize here as well if the input size is not match network size
-    // In original code, it seemed to assume inputData was already resized OR 
-    // it created a mat of net_height/width directly. 
-    // Let's stick to original logic: "cv::Mat(net_height, net_width, ...)" 
-    // implies the input buffer matches net dimensions? 
-    // Actually the original code signature was `PerformFrameInference(uchar* inputData, int net_height, int net_width)`.
-    // And it did `cv::Mat(net_height, net_width, CV_8UC3, inputData)`. 
-    // This implies the inputData IS ALREADY resized to net_height x net_width. 
-    // BUT usually `rows` and `cols` are variable. 
-    // I will assume for this overload, the C# side passes the properly sized buffer or we handle resizing?
-    // Let's correct this. The original code creates mat of size `net_height, net_width`. 
-    // This means the C# side MUST pass a resized image or the pointer interprets it as such.
-    // However, C# code `ReturnFramePerformance` passes `img.DataPointer` where `img` is resized to `net_width, net_height`.
-    // So `rows` and `cols` passed to this function SHOULD be net_height/net_width.
-    
     cv::Mat resized_img; 
-    // If input is not already float/normalized:
     input_img2.convertTo(resized_img, CV_32FC3, 1.0f / 255.0f);
 
     torch::Tensor imgTensor = torch::from_blob(resized_img.data, {net_width, net_height, 3}).to(device_type);
@@ -257,10 +236,11 @@ void YoloV8Detector::PopulateObjects(YoloObject* objects, int org_height, int or
     torch::Tensor det = dets_vec[0];
     int size = det.sizes()[0];
 
-    // Re-initialize segmentation map
+    // Re-initialize segmentation map to black
     total_seg_map = cv::Mat(org_height, org_width, CV_8UC3, cv::Scalar(0, 0, 0));
 
     for (int i = 0; i < size; i++) {
+        // Map bounding box coordinates back to original image size
         float left = std::max(0.0f, det[i][0].item().toFloat() * org_width / real_net_width);
         float top = std::max(0.0f, det[i][1].item().toFloat() * org_height / real_net_height);
         float right = std::min((float)(org_width - 1), det[i][2].item().toFloat() * org_width / real_net_width);
@@ -278,7 +258,7 @@ void YoloV8Detector::PopulateObjects(YoloObject* objects, int org_height, int or
 
         torch::Tensor seg_rois = det[i].slice(0, 5, det[i].sizes()[0]); 
 
-        // Process segmentation
+        // Process segmentation mask
         seg_rois = seg_rois.view({1, 32});
         // Ensure seg_pred is on CPU
         torch::Tensor seg_pred_cpu = seg_pred.to(torch::kCPU);
@@ -294,7 +274,7 @@ void YoloV8Detector::PopulateObjects(YoloObject* objects, int org_height, int or
         cv::Mat seg_map_color;
         cv::cvtColor(seg_map2, seg_map_color, cv::COLOR_GRAY2BGR);
 
-        // Colorize
+        // Colorize the segmentation mask based on class ID
         auto color = (classID < colors.size()) ? colors[classID] : cv::Vec3b(255, 255, 255);
         cv::Scalar colorScalar(color[0], color[1], color[2]);
         
@@ -305,7 +285,8 @@ void YoloV8Detector::PopulateObjects(YoloObject* objects, int org_height, int or
         cv::bitwise_or(total_seg_map, seg_map_color, total_seg_map);
     }
 
-    // Assign shared seg map pointer
+    // Assign total segmentation map data pointer to all objects
+    // Note: The C# side should assume this pointer is valid only until the next detection call.
     for (int i = 0; i < size; i++) {
         objects[i].seg_map = total_seg_map.data;
     }

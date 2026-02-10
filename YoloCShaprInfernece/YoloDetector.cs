@@ -17,10 +17,10 @@ namespace YoloCShaprInference
         public IntPtr seg_map; // Generic pointer, used internally by C++
     }
 
-    // [CHANGE] This class is NEW.
-    // Before: All [DllImport] methods were scattered in `Program.cs`.
-    // After:  This class WRAPS the DLL calls and hides the complexity.
-    //         It implements IDisposable to ensure the C++ memory is freed safely.
+    /// <summary>
+    /// A wrapper class for the YOLOv8 C++ DLL.
+    /// Manages the full lifecycle of the detector instance and provides safe methods for inference.
+    /// </summary>
     public class YoloDetector : IDisposable
     {
         private IntPtr _detectorHandle; // Holds the pointer to the C++ 'YoloV8Detector' object
@@ -51,6 +51,11 @@ namespace YoloCShaprInference
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         private static extern void PopulateYoloObjectsArray(IntPtr detector, IntPtr objects, int org_height, int org_width);
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="YoloDetector"/> class.
+        /// Creates a corresponding C++ detector instance.
+        /// </summary>
+        /// <exception cref="Exception">Thrown if the native instance cannot be created.</exception>
         public YoloDetector()
         {
             _detectorHandle = CreateDetector();
@@ -60,6 +65,12 @@ namespace YoloCShaprInference
             }
         }
 
+        /// <summary>
+        /// Loads the YOLOv8 model from the specified path.
+        /// </summary>
+        /// <param name="modelPath">The absolute path to the .torchscript model file.</param>
+        /// <param name="deviceNum">The device to use for inference. 0 for CPU, 1 for CUDA (default).</param>
+        /// <returns>True if the model was loaded successfully; otherwise, false.</returns>
         public bool LoadModel(string modelPath, int deviceNum = 1) // Default to CUDA
         {
             if (_detectorHandle == IntPtr.Zero) throw new ObjectDisposedException(nameof(YoloDetector));
@@ -67,18 +78,38 @@ namespace YoloCShaprInference
             return result == 1;
         }
 
+        /// <summary>
+        /// Sets the internal thresholds for the detector.
+        /// </summary>
+        /// <param name="score">Confidence score threshold.</param>
+        /// <param name="iou">IoU threshold for NMS.</param>
+        /// <param name="seg">Segmentation mask threshold.</param>
         public void SetThreshold(float score, float iou, float seg)
         {
             if (_detectorHandle == IntPtr.Zero) throw new ObjectDisposedException(nameof(YoloDetector));
             SetThreshold(_detectorHandle, score, iou, seg);
         }
 
+        /// <summary>
+        /// Performs inference on an image file.
+        /// </summary>
+        /// <param name="imgPath">Path to the image file.</param>
+        /// <param name="netHeight">Network input height.</param>
+        /// <param name="netWidth">Network input width.</param>
+        /// <returns>The number of objects detected.</returns>
         public int Detect(string imgPath, int netHeight, int netWidth)
         {
             if (_detectorHandle == IntPtr.Zero) throw new ObjectDisposedException(nameof(YoloDetector));
             return PerformImagePathInference(_detectorHandle, imgPath, netHeight, netWidth);
         }
 
+        /// <summary>
+        /// Performs inference on an in-memory image (OpenCvSharp Mat).
+        /// </summary>
+        /// <param name="image">The input image matrix.</param>
+        /// <param name="netHeight">Network input height.</param>
+        /// <param name="netWidth">Network input width.</param>
+        /// <returns>The number of objects detected.</returns>
         public int Detect(Mat image, int netHeight, int netWidth)
         {
              if (_detectorHandle == IntPtr.Zero) throw new ObjectDisposedException(nameof(YoloDetector));
@@ -87,6 +118,13 @@ namespace YoloCShaprInference
              return PerformFrameInference(_detectorHandle, (IntPtr)image.Data, netHeight, netWidth);
         }
 
+        /// <summary>
+        /// Retrieves the detailed information for detected objects.
+        /// </summary>
+        /// <param name="numObjects">The number of objects returned by the Detect method.</param>
+        /// <param name="orgHeight">Original image height for scaling coordinates.</param>
+        /// <param name="orgWidth">Original image width for scaling coordinates.</param>
+        /// <returns>An array of <see cref="YoloObject"/> containing detection details.</returns>
         public YoloObject[] GetDetectedObjects(int numObjects, int orgHeight, int orgWidth)
         {
             if (_detectorHandle == IntPtr.Zero) throw new ObjectDisposedException(nameof(YoloDetector));
@@ -109,6 +147,10 @@ namespace YoloCShaprInference
             return objects;
         }
 
+        /// <summary>
+        /// Releases all resources used by the <see cref="YoloDetector"/>.
+        /// Use this to ensure C++ memory is freed.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
