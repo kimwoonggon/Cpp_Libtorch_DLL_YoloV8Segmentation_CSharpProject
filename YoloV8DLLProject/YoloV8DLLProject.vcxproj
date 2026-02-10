@@ -42,13 +42,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -107,17 +107,27 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;YOLOV8DLLPROJECT_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <ConformanceMode>false</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>D:\opencv\opencv;D:\libtorch_gpu\include;D:\libtorch_gpu\include\torch\csrc\api\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\include;C:\Program Files\NVIDIA Corporation\NvToolsExt\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalDependencies>D:\opencv\opencv\build\x64\vc16\lib\*.lib;D:\libtorch_gpu\lib\*.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\lib\*.lib;C:\Program Files\NVIDIA Corporation\NvToolsExt\lib\x64\nvToolsExt64_1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/INCLUDE:”?warp_size@cuda@at@@YAHXZ” %(AdditionalOptions)</AdditionalOptions>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy “D:\opencv\opencv\build\x64\vc16\bin\opencv_world490.dll” “$(SolutionDir)$(Platform)\dll\” /c /y
+xcopy “C:\libtorch_gpu\lib\*.dll” “$(SolutionDir)$(Platform)\dll\” /c /y
+xcopy “C:\libtorch_gpu\lib\*.lib” “$(SolutionDir)$(Platform)\dll\” /c /y
+xcopy “C:\Program Files\NVIDIA Corporation\NvToolsExt\bin\x64\nvToolsExt64_1.dll” “$(SolutionDir)$(Platform)\dll\” /c /y</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -130,7 +140,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\opencv\opencv-4.9.0\build\install\include;D:\libtorch_gpu_release\include;D:\libtorch_gpu_release\include\torch\csrc\api\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\include;C:\Program Files\NVIDIA Corporation\NvToolsExt\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\opencv\opencv\build\include;D:\libtorch_gpu_release\include;D:\libtorch_gpu_release\include\torch\csrc\api\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\include;C:\Program Files\NVIDIA Corporation\NvToolsExt\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -138,15 +148,14 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>C:\opencv\opencv-4.9.0\build\install\x64\vc17\lib\*.lib;D:\libtorch_gpu_release\lib\*.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\lib\*.lib;C:\Program Files\NVIDIA Corporation\NvToolsExt\lib\x64\nvToolsExt64_1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>D:\opencv\opencv\build\x64\vc16\lib\*.lib;D:\libtorch_gpu_release\lib\*.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.8\lib\*.lib;C:\Program Files\NVIDIA Corporation\NvToolsExt\lib\x64\nvToolsExt64_1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/INCLUDE:"?warp_size@cuda@at@@YAHXZ" %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "C:\opencv\opencv-4.9.0\build\install\x64\vc17\bin\opencv_world490.dll" "$(SolutionDir)$(Platform)\$(Configuration)\" /c /y
+      <Command>xcopy "D:\opencv\opencv\build\x64\vc16\bin\opencv_world490.dll" "$(SolutionDir)$(Platform)\$(Configuration)\" /c /y
 xcopy "D:\libtorch_gpu_release\lib\*.dll" "$(SolutionDir)$(Platform)\$(Configuration)\" /c /y
 xcopy "D:\libtorch_gpu_release\lib\*.lib" "$(SolutionDir)$(Platform)\$(Configuration)\" /c /y
-xcopy "C:\Users\gerard\Desktop\yolov5_weights\yolov5s.torchscript" "$(SolutionDir)$(Platform)\$(Configuration)\" /c /y
-xcopy "C:\Users\gerard\Desktop\yolov5_weights\yolov5s-seg.torchscript" "$(SolutionDir)$(Platform)\$(Configuration)\" /c /y
+xcopy "D:\yolov8_weights\yolov8s-seg.torchscript" "$(SolutionDir)$(Platform)\$(Configuration)\" /c /y
 xcopy "C:\Users\gerard\source\repos\LibtorchYoloGpuConsole.cpp\LibtorchYoloGpuConsole.cpp\coco.names" "$(SolutionDir)$(Platform)\$(Configuration)\" /c /y
 xcopy "C:\Program Files\NVIDIA Corporation\NvToolsExt\bin\x64\nvToolsExt64_1.dll" "$(SolutionDir)$(Platform)\$(Configuration)\" /c /y</Command>
     </PostBuildEvent>

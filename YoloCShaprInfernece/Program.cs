@@ -16,7 +16,7 @@ namespace YoloCShaprInference
     internal class Program
     {
         // Path to the model file.
-        public static string modelPath = "yolov8l-seg.torchscript";
+        public static string modelPath = "yolov8s-seg.torchscript";
 
         // Dimensions of the input expected by the network.
         public static int net_height = 640;
@@ -415,12 +415,12 @@ namespace YoloCShaprInference
         static void Main(string[] args)
         {
             // Begin inference on a single image.
-            Console.WriteLine("Single Image Inference");
-            tryImageInference(); // Processes a single image through the model.
+            //Console.WriteLine("Single Image Inference");
+            //tryImageInference(); // Processes a single image through the model.
 
             // Start processing a video file for inference frame by frame.
-            Console.WriteLine("Video Frame Inference");
-            tryFrameInference("video.mp4"); // Applies model to each frame of "video.mp4".
+            //Console.WriteLine("Video Frame Inference");
+            //tryFrameInference("video.mp4"); // Applies model to each frame of "video.mp4".
 
             // Switch to real-time inference using webcam footage.
             // A Webcam should be prepared beforehand.
