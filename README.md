@@ -2,12 +2,28 @@
 
 This repository provides an end-to-end guide and necessary tools to perform GPU-accelerated YOLOv8 segmentation using C++ DLLs, integrated with C# via LibTorch and CUDA. It encompasses converting PyTorch YOLOv8 weights to TorchScript and ONNX, setting up C++ DLL projects with LibTorch and CUDA, and using these DLLs from C# for efficient inference.
 
+> [!IMPORTANT]
+> **Note regarding the Medium Article:**  
+> The code in this repository (`master` / `feat/code-renewal`) has been significantly improved for **safety and robustness** (memory management, thread safety) compared to the original version described in the Medium article.  
+> If you are looking for the exact code matching the tutorial, please refer to **[Release v1.0](https://github.com/kimwoonggon/Cpp_Libtorch_DLL_YoloV8Segmentation_CSharpProject/releases/tag/v1.0)**.
+
+## Recent Updates (Refactoring & Documentation)
+
+The project has undergone significant refactoring to improve stability, memory management, and ease of use:
+
+- **Class-based C++ Architecture**: The C++ DLL now uses a `YoloV8Detector` class to encapsulate the model state, replacing previous global variables. This supports multiple instances and better resource management.
+- **Opaque Pointer API**: The C-API now uses an opaque pointer (Handle) pattern, ensuring clean separation between the C# wrapper and C++ internals.
+- **Safe C# Wrapper**: A new `YoloDetector` class in C# wraps the DLL calls and implements `IDisposable`. This ensures that unmanaged C++ memory is automatically and safely released when the object is disposed or used in a `using` block.
+- **Comprehensive Documentation**:
+  - **C++**: Doxygen-style comments in `YoloV8Detector.h` and explanatory comments in `.cpp` files.
+  - **C#**: XML documentation comments for Intellisense support in Visual Studio.
+
 ## Features
 
 - **YOLOv8_Libtorch_Conversion.ipynb**: Notebook for converting YOLOv8 PyTorch weights to TorchScript and ONNX formats.
 - **YoloV8DLLProject.sln**: Visual Studio 2022 solution file for the C++ DLL project setup with LibTorch and CUDA.
-- **YoloV8DLLProject**: Directory containing the C++ DLL source code for YOLOv8 segmentation with GPU acceleration.
-- **YoloCSharpInference**: C# project for loading the C++ DLLs and performing inference.
+- **YoloV8DLLProject**: C++ DLL source code featuring the `YoloV8Detector` class for GPU-accelerated inference.
+- **YoloCSharpInference**: C# project using the `YoloDetector` wrapper for easy and safe inference.
 
 ## Prerequisites
 
@@ -34,6 +50,32 @@ git clone https://github.com/kimwoonggon/Cpp_Libtorch_DLL_YoloV8Segmentation_CSh
 5. **Run C# Inference**: With the DLLs built, you can now use the `YoloCSharpInference` project to load these DLLs and perform inference in C#.
 
 ## Usage
+
+### C# Inference Example
+
+With the new `YoloDetector` wrapper, inference is simple and safe:
+
+```csharp
+using YoloCShaprInference;
+
+// Initialize detector (automatically disposed at end of block)
+using (var detector = new YoloDetector()) 
+{
+    // Load model (0=CPU, 1=CUDA)
+    if (detector.LoadModel("yolov8s-seg.torchscript", 1)) 
+    {
+        detector.SetThreshold(0.5f, 0.45f, 0.5f);
+        
+        // Run inference
+        int count = detector.Detect("image.jpg", 640, 640);
+        
+        // Get results
+        var objects = detector.GetDetectedObjects(count, orgHeight, orgWidth);
+        
+        // Process results...
+    }
+}
+```
 
 Detailed usage instructions for each component of the project are provided within their respective directories. This includes how to convert models, build DLLs, and perform inference using the C# project.
 
