@@ -29,8 +29,8 @@ The project has undergone significant refactoring to improve stability, memory m
 
 Before starting, ensure you have the following installed and properly configured on your system:
 - CUDA and cuDNN (compatible versions with your LibTorch and PyTorch setup)
-- LibTorch (PyTorch C++ distributions)
-- .NET framework or .NET Core for C# integration
+- LibTorch (PyTorch C++ distributions of GPU)
+- .NET framework 4.7 +
 - Visual Studio 2022 or later
 
 Refer to the complete guide here for detailed setup instructions: [C++ DLL & C# with CUDA Libtorch: YOLOv8 Segmentation Guide](https://medium.com/@psopen11/complete-guide-to-gpu-accelerated-yolov8-segmentation-in-c-via-libtorch-c-dlls-a0e3e6029d82)
