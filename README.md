@@ -4,7 +4,7 @@ This repository provides an end-to-end guide and necessary tools to perform GPU-
 
 > [!IMPORTANT]
 > **Note regarding the Medium Article:**  
-> The code in this repository (`master` / `feat/code-renewal`) has been significantly improved for **safety and robustness** (memory management, thread safety) compared to the original version described in the Medium article.  
+> The code in this repository (`master`) has been significantly improved for **safety and robustness** (memory management, thread safety) compared to the original version described in the Medium article.  
 > If you are looking for the exact code matching the tutorial, please refer to **[Release v1.0](https://github.com/kimwoonggon/Cpp_Libtorch_DLL_YoloV8Segmentation_CSharpProject/releases/tag/v1.0)**.
 
 ## Recent Updates (Refactoring & Documentation)
